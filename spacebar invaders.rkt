@@ -3,13 +3,42 @@
 #reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname |spacebar invaders|) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require 2htdp/image)
 (require 2htdp/universe)
-(define SCENE (empty-scene 300 300))
-(define player (triangle 50 "solid" "blue" ))
-(define player-bullet (triangle 10 "solid" "red"))
-(define-struct world (w))
-(define-struct good-bullet (x y))
-
-
-
+; physical constants
+(define HEIGHT 80)
+(define WIDTH 100)
+(define XSHOTS (/ WIDTH 2))
  
-          
+; graphical constants
+(define BACKGROUND (empty-scene WIDTH HEIGHT))
+(define SHOT (triangle 3 "solid" "red"))
+ 
+; A ShotWorld is List-of-numbers.
+; interp.: the collection of shots fired and moving straight up
+ 
+; ShotWorld -> ShotWorld
+; move each shot up by one pixel
+(define (tock w)
+  (cond
+    [(empty? w) empty]
+    [else (cons (sub1 (first w)) (tock (rest w)))]))
+ 
+; ShotWorld KeyEvent -> ShotWorld
+; add a shot to the world if the space bar was hit
+(define (keyh w ke)
+  (cond
+    [(key=? ke " ") (cons HEIGHT w)]
+    [else w]))
+ 
+; ShotWorld -> Image
+; add each shot y on w at (MID,y) to the background image
+(define (to-image w)
+  (cond
+    [(empty? w) BACKGROUND]
+    [else (place-image SHOT XSHOTS (first w) (to-image (rest w)))]))
+ 
+; ShotWorld -> ShotWorld
+(define (main w0)
+  (big-bang w0
+            (on-tick tock)
+            (on-key keyh)
+            (to-draw to-image)))
